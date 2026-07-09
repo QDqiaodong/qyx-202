@@ -1,0 +1,7 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+RUN npm config set registry https://mirrors.ustc.edu.cn/npm/
+
+CMD ["npm", "run", "dev"]

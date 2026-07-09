@@ -1,0 +1,71 @@
+services:
+  mysql:
+    image: ${DOCKER_REGISTRY:-docker.io/library/}mysql:8.0
+    container_name: ship-room-mysql-dev
+    ports:
+      - "127.0.0.1:${MYSQL_PORT:-3348}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-example_db}
+      MYSQL_USER: ${MYSQL_USER:-admin}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-password}
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    volumes:
+      - mysql-data-dev:/var/lib/mysql
+    networks:
+      - ship-room-network-dev
+
+  redis:
+    image: ${DOCKER_REGISTRY:-docker.io/library/}redis:7.2
+    container_name: ship-room-redis-dev
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6420}:6379"
+    volumes:
+      - redis-data-dev:/data
+    networks:
+      - ship-room-network-dev
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: ship-room-backend-dev
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-8132}:8132"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-example_db}?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=utf-8
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-admin}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-password}
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+    depends_on:
+      - mysql
+      - redis
+    volumes:
+      - ./backend:/app
+    networks:
+      - ship-room-network-dev
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: ship-room-frontend-dev
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-8122}:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - ship-room-network-dev
+
+volumes:
+  mysql-data-dev:
+  redis-data-dev:
+
+networks:
+  ship-room-network-dev:
+    driver: bridge

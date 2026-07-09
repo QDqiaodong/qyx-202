@@ -1,0 +1,7 @@
+FROM maven:3.9-eclipse-temurin-17
+
+WORKDIR /app
+
+COPY maven_settings.xml /etc/maven/settings.xml
+
+CMD ["mvn", "spring-boot:run", "-s", "/etc/maven/settings.xml"]

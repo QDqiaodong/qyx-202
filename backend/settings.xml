@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+    <mirrors>
+        <mirror>
+            <id>aliyunmaven</id>
+            <mirrorOf>central</mirrorOf>
+            <url>https://maven.aliyun.com/repository/public</url>
+        </mirror>
+        <mirror>
+            <id>aliyun-spring</id>
+            <mirrorOf>spring-plugin</mirrorOf>
+            <url>https://maven.aliyun.com/repository/spring-plugin</url>
+        </mirror>
+        <mirror>
+            <id>netease</id>
+            <mirrorOf>central</mirrorOf>
+            <url>https://mirrors.163.com/maven/repository/maven-public/</url>
+        </mirror>
+    </mirrors>
+    <profiles>
+        <profile>
+            <id>default</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <maven.wagon.http.retryHandler.count>5</maven.wagon.http.retryHandler.count>
+                <maven.wagon.http.connectionTimeout>60000</maven.wagon.http.connectionTimeout>
+                <maven.wagon.http.readTimeout>120000</maven.wagon.http.readTimeout>
+            </properties>
+        </profile>
+    </profiles>
+</settings>
