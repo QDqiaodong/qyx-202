@@ -5,8 +5,10 @@ import com.example.shiproom.dto.LoungeRoomDTO;
 import com.example.shiproom.dto.RelationBindDTO;
 import com.example.shiproom.dto.RelationChangeLogDTO;
 import com.example.shiproom.dto.ResponseDTO;
+import com.example.shiproom.exception.ShiftBlockedException;
 import com.example.shiproom.service.RelationBindService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,36 +21,40 @@ public class RelationBindController {
     private RelationBindService relationBindService;
 
     @PostMapping("/bind")
-    public ResponseDTO<Void> bindDevice(@RequestBody RelationBindDTO dto) {
+    public ResponseEntity<ResponseDTO<?>> bindDevice(@RequestBody RelationBindDTO dto) {
         try {
             relationBindService.bindDevice(dto);
-            return ResponseDTO.success(null);
-        } catch (Exception e) {
-            return ResponseDTO.error(e.getMessage());
+            return ResponseEntity.ok(ResponseDTO.success(null));
+        } catch (ShiftBlockedException e) {
+            return ResponseEntity.status(409).<ResponseDTO<?>>body(ResponseDTO.error(409, e.getMessage(), e.getBlockedAppliances()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().<ResponseDTO<?>>body(ResponseDTO.error(400, e.getMessage()));
         }
     }
 
     @PutMapping("/room/{roomId}/ship/{shipId}")
-    public ResponseDTO<Void> updateRelation(@PathVariable Long roomId, @PathVariable Long shipId,
+    public ResponseEntity<ResponseDTO<?>> updateRelation(@PathVariable Long roomId, @PathVariable Long shipId,
                                             @RequestParam(required = false) String operator,
                                             @RequestParam(required = false) String remark) {
         try {
-            relationBindService.updateRelation(roomId, shipId, operator, remark);
-            return ResponseDTO.success(null);
-        } catch (Exception e) {
-            return ResponseDTO.error(e.getMessage());
+            return ResponseEntity.ok(ResponseDTO.success(relationBindService.updateRelation(roomId, shipId, operator, remark)));
+        } catch (ShiftBlockedException e) {
+            return ResponseEntity.status(409).<ResponseDTO<?>>body(ResponseDTO.error(409, e.getMessage(), e.getBlockedAppliances()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().<ResponseDTO<?>>body(ResponseDTO.error(400, e.getMessage()));
         }
     }
 
     @PutMapping("/ship/change")
-    public ResponseDTO<Void> shipChange(@RequestParam Long oldShipId, @RequestParam Long newShipId,
+    public ResponseEntity<ResponseDTO<?>> shipChange(@RequestParam Long oldShipId, @RequestParam Long newShipId,
                                         @RequestParam(required = false) String operator,
                                         @RequestParam(required = false) String remark) {
         try {
-            relationBindService.shipChange(oldShipId, newShipId, operator, remark);
-            return ResponseDTO.success(null);
-        } catch (Exception e) {
-            return ResponseDTO.error(e.getMessage());
+            return ResponseEntity.ok(ResponseDTO.success(relationBindService.shipChange(oldShipId, newShipId, operator, remark)));
+        } catch (ShiftBlockedException e) {
+            return ResponseEntity.status(409).<ResponseDTO<?>>body(ResponseDTO.error(409, e.getMessage(), e.getBlockedAppliances()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().<ResponseDTO<?>>body(ResponseDTO.error(400, e.getMessage()));
         }
     }
 

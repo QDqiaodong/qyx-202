@@ -16,8 +16,12 @@ public class ShipService {
     @Autowired
     private ShipRepository shipRepository;
 
+    @Autowired
+    private ShiftOperationLockService shiftOperationLockService;
+
     @Transactional
     public ShipDTO create(ShipDTO dto) {
+        shiftOperationLockService.lock();
         if (shipRepository.existsByShipCode(dto.getShipCode())) {
             throw new RuntimeException("船舶编号已存在");
         }
@@ -33,6 +37,7 @@ public class ShipService {
 
     @Transactional
     public ShipDTO update(Long id, ShipDTO dto) {
+        shiftOperationLockService.lock();
         Ship ship = shipRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("船舶不存在"));
 
@@ -52,6 +57,7 @@ public class ShipService {
 
     @Transactional
     public void delete(Long id) {
+        shiftOperationLockService.lock();
         if (!shipRepository.existsById(id)) {
             throw new RuntimeException("船舶不存在");
         }

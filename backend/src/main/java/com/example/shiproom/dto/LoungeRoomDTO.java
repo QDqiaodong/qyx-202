@@ -17,7 +17,11 @@ public class LoungeRoomDTO {
 
     private String status;
 
+    private Long shipId;
+
     private String shipCode;
 
     private String shipName;
+
+    private String changeBatch;
 }

@@ -18,6 +18,7 @@ export interface ElectricAppliance {
   shipId?: number
   shipCode?: string
   shipName?: string
+  lastChangeBatch?: string
 }
 
 export interface LoungeRoom {
@@ -27,8 +28,10 @@ export interface LoungeRoom {
   floor?: string
   capacity?: number
   status?: string
+  shipId?: number
   shipCode?: string
   shipName?: string
+  changeBatch?: string
 }
 
 export interface Ship {
@@ -54,6 +57,7 @@ export interface RelationBind {
 export interface RelationChangeLog {
   id?: number
   changeType: string
+  changeBatch?: string
   deviceId?: number
   deviceCode?: string
   roomId?: number
@@ -67,6 +71,26 @@ export interface RelationChangeLog {
   operator?: string
   remark?: string
   changeTime?: string
+}
+
+export interface ShiftBlockedAppliance {
+  id: number
+  deviceCode: string
+  deviceName: string
+  status?: string
+  roomId?: number
+  roomCode?: string
+  roomName?: string
+  shipId?: number
+  shipCode?: string
+  shipName?: string
+}
+
+export interface ShiftResult {
+  changeBatch: string
+  roomCount: number
+  applianceCount: number
+  blockedAppliances?: ShiftBlockedAppliance[]
 }
 
 export const applianceApi = {

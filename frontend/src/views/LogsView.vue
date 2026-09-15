@@ -14,8 +14,9 @@ const filterShipId = ref<number | undefined>()
 
 const changeTypeMap: Record<string, string> = {
   'BIND': '绑定',
-  'SHIP_CHANGE': '船舶变更',
-  'SHIP_SWITCH': '船舶换班'
+  'SHIP_CHANGE': '房间换船',
+  'SHIP_SWITCH': '整船换班',
+  'ROOM_SHIP_CHANGE': '房间占用改挂'
 }
 
 const loadData = async () => {
@@ -81,6 +82,7 @@ onMounted(loadData)
       </template>
       <ElTable :data="logs" border style="width: 100%">
         <ElTableColumn prop="id" label="ID" width="80" />
+        <ElTableColumn prop="changeBatch" label="换班批次" min-width="180" />
         <ElTableColumn prop="changeType" label="变更类型">
           <template #default="{ row }">
             {{ changeTypeMap[row.changeType] || row.changeType }}

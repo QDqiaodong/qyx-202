@@ -36,6 +36,9 @@ public class ElectricAppliance {
     @Column(name = "ship_id")
     private Long shipId;
 
+    @Column(name = "last_change_batch", length = 64)
+    private String lastChangeBatch;
+
     @Column(name = "create_time", nullable = false, updatable = false)
     private LocalDateTime createTime;
 

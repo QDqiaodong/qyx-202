@@ -60,6 +60,10 @@ const openDialog = (edit = false, data?: ElectricAppliance) => {
 
 const save = async () => {
   try {
+    if ((form.value.roomId === undefined) !== (form.value.shipId === undefined)) {
+      ElMessage.error('房间和船舶必须同时登记，不能只挂一层')
+      return
+    }
     form.value.power = powerInput.value || 0
     if (isEdit.value && form.value.id) {
       await applianceApi.update(form.value.id, form.value)
@@ -107,6 +111,7 @@ onMounted(loadData)
       </ElTableColumn>
       <ElTableColumn prop="roomCode" label="所属休息室" />
       <ElTableColumn prop="shipCode" label="绑定船舶" />
+      <ElTableColumn prop="lastChangeBatch" label="最近换班批次" min-width="180" />
       <ElTableColumn label="操作">
         <template #default="{ row }">
           <ElButton size="small" @click="openDialog(true, row as ElectricAppliance)">编辑</ElButton>
@@ -137,12 +142,12 @@ onMounted(loadData)
           </ElSelect>
         </ElFormItem>
         <ElFormItem label="所属休息室">
-          <ElSelect v-model="form.roomId">
+          <ElSelect v-model="form.roomId" :disabled="isEdit" placeholder="绑定后请通过换班调整">
             <ElSelectOption v-for="room in rooms" :key="room.id" :label="room.roomName" :value="room.id" />
           </ElSelect>
         </ElFormItem>
         <ElFormItem label="绑定船舶">
-          <ElSelect v-model="form.shipId">
+          <ElSelect v-model="form.shipId" :disabled="isEdit" placeholder="绑定后请通过换班调整">
             <ElSelectOption v-for="ship in ships" :key="ship.id" :label="ship.shipName" :value="ship.id" />
           </ElSelect>
         </ElFormItem>

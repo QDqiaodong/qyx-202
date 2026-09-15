@@ -2,20 +2,14 @@ package com.example.shiproom.dto;
 
 import lombok.Data;
 
-import java.math.BigDecimal;
-
 @Data
-public class ElectricApplianceDTO {
+public class ShiftBlockedApplianceDTO {
 
     private Long id;
 
     private String deviceCode;
 
     private String deviceName;
-
-    private BigDecimal power;
-
-    private String applianceType;
 
     private String status;
 
@@ -30,6 +24,4 @@ public class ElectricApplianceDTO {
     private String shipCode;
 
     private String shipName;
-
-    private String lastChangeBatch;
 }

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { ElButton, ElDialog, ElForm, ElFormItem, ElSelect, ElInput, ElMessage, ElCard } from 'element-plus'
+import { ElButton, ElDialog, ElForm, ElFormItem, ElSelect, ElInput, ElMessage, ElCard, ElMessageBox } from 'element-plus'
 import ElSelectOption from 'element-plus'
-import { applianceApi, roomApi, shipApi, relationApi, type ElectricAppliance, type LoungeRoom, type Ship } from '@/api'
+import { applianceApi, roomApi, shipApi, relationApi, type ElectricAppliance, type LoungeRoom, type Ship, type ShiftBlockedAppliance, type ShiftResult } from '@/api'
 
 const appliances = ref<ElectricAppliance[]>([])
 const rooms = ref<LoungeRoom[]>([])
@@ -32,6 +32,29 @@ const shipChangeForm = ref({
   operator: '',
   remark: ''
 })
+
+const showBlockedError = (error: any, fallbackMessage: string) => {
+  const blocked: ShiftBlockedAppliance[] = error.response?.data?.data || []
+  const message = error.response?.data?.message || fallbackMessage
+  if (blocked.length > 0) {
+    const detail = blocked.map(item => `${item.deviceCode}（${item.deviceName}）`).join('、')
+    ElMessageBox.alert(
+      `${message}\n卡住的电器：${detail}`,
+      '换班整单退回',
+      {
+        type: 'error',
+        confirmButtonText: '知道了',
+        customClass: 'shift-blocked-message'
+      }
+    )
+  } else {
+    ElMessage.error(message)
+  }
+}
+
+const showShiftSuccess = (result: ShiftResult, label: string) => {
+  ElMessage.success(`${label}成功：房间 ${result.roomCount} 间、电器 ${result.applianceCount} 台，批次 ${result.changeBatch}`)
+}
 
 const loadData = async () => {
   try {
@@ -68,7 +91,7 @@ const handleBind = async () => {
     }
     loadData()
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.message || '绑定失败')
+    showBlockedError(error, '绑定失败')
   }
 }
 
@@ -79,8 +102,7 @@ const handleUpdateRelation = async () => {
       updateForm.value.shipId!,
       updateForm.value.operator,
       updateForm.value.remark
-    )
-    ElMessage.success('关联更新成功')
+    ).then(res => showShiftSuccess(res.data.data as ShiftResult, '房间换班'))
     updateDialogVisible.value = false
     updateForm.value = {
       roomId: undefined,
@@ -90,7 +112,7 @@ const handleUpdateRelation = async () => {
     }
     loadData()
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.message || '更新失败')
+    showBlockedError(error, '更新失败，换班已整单退回')
   }
 }
 
@@ -101,8 +123,7 @@ const handleShipChange = async () => {
       shipChangeForm.value.newShipId!,
       shipChangeForm.value.operator,
       shipChangeForm.value.remark
-    )
-    ElMessage.success('船舶换班成功')
+    ).then(res => showShiftSuccess(res.data.data as ShiftResult, '整船换班'))
     shipChangeDialogVisible.value = false
     shipChangeForm.value = {
       oldShipId: undefined,
@@ -112,7 +133,7 @@ const handleShipChange = async () => {
     }
     loadData()
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.message || '换班失败')
+    showBlockedError(error, '换班失败，整趟换班已退回')
   }
 }
 
@@ -223,3 +244,9 @@ onMounted(loadData)
     </ElDialog>
   </div>
 </template>
+<style>
+.shift-blocked-message .el-message-box__message {
+  white-space: pre-line;
+  line-height: 1.6;
+}
+</style>

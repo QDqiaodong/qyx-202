@@ -11,6 +11,8 @@ public class RelationChangeLogDTO {
 
     private String changeType;
 
+    private String changeBatch;
+
     private Long deviceId;
 
     private String deviceCode;

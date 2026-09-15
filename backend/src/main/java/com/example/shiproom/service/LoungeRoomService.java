@@ -26,8 +26,12 @@ public class LoungeRoomService {
     @Autowired
     private ShipRepository shipRepository;
 
+    @Autowired
+    private ShiftOperationLockService shiftOperationLockService;
+
     @Transactional
     public LoungeRoomDTO create(LoungeRoomDTO dto) {
+        shiftOperationLockService.lock();
         if (loungeRoomRepository.existsByRoomCode(dto.getRoomCode())) {
             throw new RuntimeException("房间编号已存在");
         }
@@ -43,6 +47,7 @@ public class LoungeRoomService {
 
     @Transactional
     public LoungeRoomDTO update(Long id, LoungeRoomDTO dto) {
+        shiftOperationLockService.lock();
         LoungeRoom room = loungeRoomRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("房间不存在"));
 
@@ -62,6 +67,7 @@ public class LoungeRoomService {
 
     @Transactional
     public void delete(Long id) {
+        shiftOperationLockService.lock();
         if (!loungeRoomRepository.existsById(id)) {
             throw new RuntimeException("房间不存在");
         }
@@ -100,6 +106,8 @@ public class LoungeRoomService {
                 .filter(r -> "ACTIVE".equals(r.getStatus()))
                 .findFirst()
                 .ifPresent(relation -> {
+                    dto.setShipId(relation.getShipId());
+                    dto.setChangeBatch(relation.getChangeBatch());
                     shipRepository.findById(relation.getShipId())
                             .ifPresent(ship -> {
                                 dto.setShipCode(ship.getShipCode());

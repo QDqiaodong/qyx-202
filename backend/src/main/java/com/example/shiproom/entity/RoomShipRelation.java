@@ -26,6 +26,9 @@ public class RoomShipRelation {
     @Column(name = "status", length = 20)
     private String status;
 
+    @Column(name = "change_batch", length = 64)
+    private String changeBatch;
+
     @Column(name = "create_time", nullable = false, updatable = false)
     private LocalDateTime createTime;
 

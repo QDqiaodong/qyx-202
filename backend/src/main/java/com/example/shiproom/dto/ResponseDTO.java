@@ -40,4 +40,10 @@ public class ResponseDTO<T> {
         response.setMessage(message);
         return response;
     }
+
+    public static <T> ResponseDTO<T> error(Integer code, String message, T data) {
+        ResponseDTO<T> response = error(code, message);
+        response.setData(data);
+        return response;
+    }
 }

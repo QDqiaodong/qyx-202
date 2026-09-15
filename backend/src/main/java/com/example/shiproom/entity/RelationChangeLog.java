@@ -17,6 +17,9 @@ public class RelationChangeLog {
     @Column(name = "change_type", nullable = false, length = 50)
     private String changeType;
 
+    @Column(name = "change_batch", length = 64)
+    private String changeBatch;
+
     @Column(name = "device_id")
     private Long deviceId;
 

@@ -6,6 +6,7 @@ import com.example.shiproom.entity.LoungeRoom;
 import com.example.shiproom.entity.Ship;
 import com.example.shiproom.repository.ElectricApplianceRepository;
 import com.example.shiproom.repository.LoungeRoomRepository;
+import com.example.shiproom.repository.RoomShipRelationRepository;
 import com.example.shiproom.repository.ShipRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,11 +33,19 @@ public class ElectricApplianceService {
     @Autowired
     private ShipRepository shipRepository;
 
-    @Autowired(required = false)
+    @Autowired
+    private RoomShipRelationRepository roomShipRelationRepository;
+
+    @Autowired
     private RedisTemplate<String, Object> redisTemplate;
+
+    @Autowired
+    private ShiftOperationLockService shiftOperationLockService;
 
     @Transactional
     public ElectricApplianceDTO create(ElectricApplianceDTO dto) {
+        shiftOperationLockService.lock();
+        validateRoomShipBinding(dto.getRoomId(), dto.getShipId());
         if (electricApplianceRepository.existsByDeviceCode(dto.getDeviceCode())) {
             throw new RuntimeException("设备编号已存在");
         }
@@ -56,8 +65,14 @@ public class ElectricApplianceService {
 
     @Transactional
     public ElectricApplianceDTO update(Long id, ElectricApplianceDTO dto) {
+        shiftOperationLockService.lock();
         ElectricAppliance appliance = electricApplianceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("设备不存在"));
+        validateRoomShipBinding(dto.getRoomId(), dto.getShipId());
+        if (!java.util.Objects.equals(appliance.getRoomId(), dto.getRoomId())
+                || !java.util.Objects.equals(appliance.getShipId(), dto.getShipId())) {
+            throw new RuntimeException("不能通过电器编辑直接改挂休息室或船舶，请使用绑定或换班功能一次改齐");
+        }
 
         if (!appliance.getDeviceCode().equals(dto.getDeviceCode()) &&
                 electricApplianceRepository.existsByDeviceCode(dto.getDeviceCode())) {
@@ -79,6 +94,7 @@ public class ElectricApplianceService {
 
     @Transactional
     public void delete(Long id) {
+        shiftOperationLockService.lock();
         ElectricAppliance appliance = electricApplianceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("设备不存在"));
         if (redisTemplate != null) {
@@ -115,6 +131,24 @@ public class ElectricApplianceService {
                 .collect(Collectors.toList());
     }
 
+    private void validateRoomShipBinding(Long roomId, Long shipId) {
+        if (roomId == null && shipId == null) {
+            return;
+        }
+        if (roomId == null || shipId == null) {
+            throw new RuntimeException("房间占用和电器所属船舶必须同时登记，不能只改一层");
+        }
+        loungeRoomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("休息室不存在"));
+        shipRepository.findById(shipId)
+                .orElseThrow(() -> new RuntimeException("船舶不存在"));
+        boolean active = roomShipRelationRepository.findByRoomId(roomId).stream()
+                .anyMatch(relation -> shipId.equals(relation.getShipId()) && "ACTIVE".equals(relation.getStatus()));
+        if (!active) {
+            throw new RuntimeException("房间当前未停靠该船舶，不能登记电器归属");
+        }
+    }
+
     private void updateRedisPower(ElectricAppliance appliance) {
         if (redisTemplate == null) {
             logger.warn("RedisTemplate not available");
@@ -139,6 +173,7 @@ public class ElectricApplianceService {
         dto.setStatus(appliance.getStatus());
         dto.setRoomId(appliance.getRoomId());
         dto.setShipId(appliance.getShipId());
+        dto.setLastChangeBatch(appliance.getLastChangeBatch());
 
         if (appliance.getRoomId() != null) {
             loungeRoomRepository.findById(appliance.getRoomId())

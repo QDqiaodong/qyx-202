@@ -89,6 +89,7 @@ onMounted(loadData)
       </ElTableColumn>
       <ElTableColumn prop="shipCode" label="绑定船舶" />
       <ElTableColumn prop="shipName" label="船舶名称" />
+      <ElTableColumn prop="changeBatch" label="最近换班批次" min-width="180" />
       <ElTableColumn label="操作">
         <template #default="{ row }">
           <ElButton size="small" @click="openDialog(true, row as LoungeRoom)">编辑</ElButton>

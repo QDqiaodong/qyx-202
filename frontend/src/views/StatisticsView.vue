@@ -103,6 +103,7 @@ onMounted(loadData)
         <ElTableColumn prop="roomName" label="休息室名称" />
         <ElTableColumn prop="shipCode" label="绑定船舶" />
         <ElTableColumn prop="shipName" label="船舶名称" />
+        <ElTableColumn prop="lastChangeBatch" label="最近换班批次" min-width="180" />
       </ElTable>
     </ElCard>
   </div>
