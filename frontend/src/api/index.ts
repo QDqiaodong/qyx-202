@@ -73,6 +73,75 @@ export interface RelationChangeLog {
   changeTime?: string
 }
 
+export interface LoungeKey {
+  id?: number
+  keyCode: string
+  keyName: string
+  roomId?: number
+  roomCode?: string
+  roomName?: string
+  status?: string
+  holderName?: string
+  shipId?: number
+  shipCode?: string
+  shipName?: string
+  checkoutBatch?: string
+  checkoutTime?: string
+}
+
+export interface KeyOccupancy {
+  id?: number
+  keyId: number
+  keyCode: string
+  keyName?: string
+  roomId: number
+  roomCode: string
+  roomName?: string
+  shipId: number
+  shipCode: string
+  shipName?: string
+  holderName: string
+  checkoutBatch: string
+  checkoutTime: string
+}
+
+export interface KeyCheckoutRecord {
+  id?: number
+  checkoutBatch: string
+  keyId: number
+  keyCode: string
+  keyName?: string
+  roomId: number
+  roomCode: string
+  roomName?: string
+  shipId: number
+  shipCode: string
+  shipName?: string
+  holderName: string
+  operator?: string
+  status: string
+  checkoutTime: string
+  returnTime?: string
+  returnOperator?: string
+  remark?: string
+}
+
+export interface KeyBlocked {
+  keyId: number
+  keyCode: string
+  keyName?: string
+  roomId: number
+  roomCode: string
+  roomName?: string
+  requestedShipId?: number
+  requestedShipCode?: string
+  requestedShipName?: string
+  currentShipId?: number
+  currentShipCode?: string
+  currentShipName?: string
+  holderName?: string
+}
+
 export interface ShiftBlockedAppliance {
   id: number
   deviceCode: string
@@ -130,4 +199,19 @@ export const relationApi = {
   getAppliancesByRoom: (roomId: number) => request.get(`/relation/room/${roomId}/appliances`),
   getLogs: (deviceId?: number, roomId?: number, shipId?: number) =>
     request.get('/relation/logs', { params: { deviceId, roomId, shipId } })
+}
+
+export const keyApi = {
+  list: () => request.get('/key'),
+  create: (data: LoungeKey) => request.post('/key', data),
+  update: (id: number, data: LoungeKey) => request.put(`/key/${id}`, data),
+  delete: (id: number) => request.delete(`/key/${id}`),
+  checkout: (data: { keyId: number; shipId: number; holderName: string; operator?: string; remark?: string }) =>
+    request.post('/key/checkout', data),
+  returnKey: (data: { keyId: number; operator?: string; remark?: string }) =>
+    request.post('/key/return', data),
+  occupancyByShip: (shipId: number) => request.get(`/key/occupancy/ship/${shipId}`),
+  occupancyByRoom: (roomId: number) => request.get(`/key/occupancy/room/${roomId}`),
+  records: (keyId?: number, roomId?: number, shipId?: number) =>
+    request.get('/key/records', { params: { keyId, roomId, shipId } })
 }
