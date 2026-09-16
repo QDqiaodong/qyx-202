@@ -11,6 +11,7 @@ const menuItems = [
   { path: '/ship', label: '船舶管理' },
   { path: '/relation', label: '关联绑定' },
   { path: '/key', label: '钥匙领还' },
+  { path: '/patrol', label: '夜班巡检交班' },
   { path: '/statistics', label: '统计查询' },
   { path: '/logs', label: '变更记录' }
 ]
