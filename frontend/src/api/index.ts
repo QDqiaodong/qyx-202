@@ -393,6 +393,98 @@ export interface LinenBlocked {
   message?: string
 }
 
+export interface Generator {
+  id?: number
+  genCode: string
+  genName: string
+  location?: string
+  status?: string
+  /** 库存升数（只随复核通过变动） */
+  fuelStockLiters?: number
+  remark?: string
+  createTime?: string
+  updateTime?: string
+}
+
+export interface GeneratorFuelState {
+  generatorId: number
+  genCode: string
+  genName?: string
+  location?: string
+  status?: string
+  /** 当前库存升数 */
+  fuelStockLiters?: number
+  /** 今天的自然日 */
+  today?: string
+  /** NONE=今天还没加油 / PENDING_REVIEW=已登记待复核 / REVIEWED=已加油（复核通过） */
+  todayState: string
+  /** 今天已复核通过的升数合计 */
+  todayReviewedLiters?: number
+  pendingRefillId?: number
+  pendingRefillNo?: string
+  pendingCanNo?: string
+  pendingLiters?: number
+  pendingDutyOfficer?: string
+  pendingDutyShift?: string
+  /** 今天最近一次复核通过的复核人（另一个班的人） */
+  todayReviewerName?: string
+  todayReviewerShift?: string
+  todayReviewTime?: string
+}
+
+export interface FuelRefill {
+  id?: number
+  refillNo: string
+  generatorId: number
+  genCode: string
+  genName?: string
+  refillDate: string
+  /** 本罐编号 */
+  canNo: string
+  /** 实加升数 */
+  liters: number
+  /** 经办值班 */
+  dutyOfficer: string
+  /** 经办班次：DAY=早班 / MIDDLE=中班 / NIGHT=夜班 */
+  dutyShift: string
+  /** PENDING_REVIEW / REVIEWED */
+  status: string
+  reviewerName?: string
+  reviewerShift?: string
+  reviewTime?: string
+  reviewConclusion?: string
+  reviewComment?: string
+  /** 复核通过时库存升数（加之前/加之后），盘库存对账用 */
+  stockBeforeLiters?: number
+  stockAfterLiters?: number
+  remark?: string
+  createTime?: string
+  updateTime?: string
+}
+
+export interface FuelBlocked {
+  /** DUPLICATE_PENDING / ALREADY_REVIEWED */
+  reason?: string
+  generatorId?: number
+  genCode?: string
+  genName?: string
+  refillId?: number
+  refillNo?: string
+  canNo?: string
+  liters?: number
+  dutyOfficer?: string
+  dutyShift?: string
+  /** 已在库未复核单号（重复登记时带） */
+  existingRefillNo?: string
+  existingRefillId?: number
+  /** 先写完的那次复核（复核撞车时带） */
+  reviewerName?: string
+  reviewerShift?: string
+  reviewTime?: string
+  reviewConclusion?: string
+  message?: string
+}
+
 export const applianceApi = {
   list: () => request.get('/appliance'),
   get: (id: number) => request.get(`/appliance/${id}`),
@@ -485,4 +577,23 @@ export const linenApi = {
     request.get('/linen/records', { params: { roomId, shipId } }),
   roomStates: () => request.get('/linen/rooms'),
   roomState: (roomId: number) => request.get(`/linen/rooms/${roomId}`)
+}
+
+export const fuelApi = {
+  create: (data: {
+    generatorId: number
+    canNo: string
+    liters: number | null
+    dutyOfficer: string
+    dutyShift: string
+    remark?: string
+  }) => request.post('/fuel/records', data),
+  review: (id: number, data: { reviewerName: string; reviewerShift: string; reviewComment?: string }) =>
+    request.post(`/fuel/records/${id}/review`, data),
+  records: (generatorId?: number, date?: string) =>
+    request.get('/fuel/records', { params: { generatorId, date } }),
+  generatorStates: () => request.get('/fuel/generators/state'),
+  generators: () => request.get('/fuel/generators'),
+  createGenerator: (data: Partial<Generator>) => request.post('/fuel/generators', data),
+  updateGenerator: (id: number, data: Partial<Generator>) => request.put(`/fuel/generators/${id}`, data)
 }

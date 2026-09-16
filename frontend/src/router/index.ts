@@ -43,6 +43,11 @@ const router = createRouter({
       component: () => import('../views/LinenView.vue')
     },
     {
+      path: '/fuel',
+      name: 'fuel',
+      component: () => import('../views/FuelView.vue')
+    },
+    {
       path: '/statistics',
       name: 'statistics',
       component: () => import('../views/StatisticsView.vue')

@@ -183,7 +183,6 @@ class LinenRecoveryServiceTest {
         when(loungeRoomRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(room));
         when(roomShipRelationRepository.findByRoomIdForUpdate(10L))
                 .thenReturn(List.of(inactive(30L, "SHIP-A", "BATCH-1"), active(20L, "SHIP-B", "BATCH-2")));
-        when(shipRepository.findById(30L)).thenReturn(Optional.of(ship(30L, "SHIP-A")));
         LinenRecovery existing = draftSheet(10L, "R-101", "BATCH-2");
         existing.setRecoveryNo("LINEN-EXISTING");
         when(linenRecoveryRepository

@@ -13,6 +13,7 @@ const menuItems = [
   { path: '/key', label: '钥匙领还' },
   { path: '/patrol', label: '夜班巡检交班' },
   { path: '/linen', label: '布草回收' },
+  { path: '/fuel', label: '发电机加油' },
   { path: '/statistics', label: '统计查询' },
   { path: '/logs', label: '变更记录' }
 ]
