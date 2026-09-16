@@ -7,6 +7,7 @@ import com.example.shiproom.dto.KeyReturnDTO;
 import com.example.shiproom.dto.LoungeKeyDTO;
 import com.example.shiproom.dto.ResponseDTO;
 import com.example.shiproom.exception.KeyCheckoutBlockedException;
+import com.example.shiproom.exception.LinenOccupancyBlockedException;
 import com.example.shiproom.service.KeyCheckoutService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +28,9 @@ public class KeyCheckoutController {
             return ResponseEntity.ok(ResponseDTO.success(keyCheckoutService.checkout(dto)));
         } catch (KeyCheckoutBlockedException e) {
             return ResponseEntity.status(409).<ResponseDTO<?>>body(ResponseDTO.error(409, e.getMessage(), e.getBlockedKey()));
+        } catch (LinenOccupancyBlockedException e) {
+            // 回收未齐：上一班脏床品还没登记齐，别的船的人不能占用这间房
+            return ResponseEntity.status(409).<ResponseDTO<?>>body(ResponseDTO.error(409, e.getMessage(), e.getBlocked()));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().<ResponseDTO<?>>body(ResponseDTO.error(400, e.getMessage()));
         }

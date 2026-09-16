@@ -313,6 +313,86 @@ export interface PatrolSubmitResult {
   record?: PatrolHandoverRecord
 }
 
+export interface LinenRecovery {
+  id?: number
+  recoveryNo: string
+  roomId: number
+  roomCode: string
+  roomName?: string
+  departedShipId?: number
+  departedShipCode?: string
+  departedShipName?: string
+  changeBatch?: string
+  /** 收走的脏床品套数（未填为空） */
+  setCount?: number | null
+  /** 秤上的封袋公斤数（未填为空） */
+  bagWeight?: number | null
+  kgPerSetMin?: number
+  kgPerSetMax?: number
+  /** 见证人姓名（未填为空） */
+  witnessName?: string | null
+  operator?: string
+  /** DRAFT / CONFIRMED / VOID */
+  status: string
+  remark?: string
+  confirmedTime?: string
+  confirmedBy?: string
+  voidTime?: string
+  voidBy?: string
+  voidReason?: string
+  createTime?: string
+  updateTime?: string
+}
+
+export interface LinenRoomState {
+  roomId: number
+  roomCode: string
+  roomName?: string
+  floor?: string
+  currentShipId?: number
+  currentShipCode?: string
+  currentShipName?: string
+  departedShipId?: number
+  departedShipCode?: string
+  departedShipName?: string
+  /** NOT_NEEDED / PENDING / DRAFT / RECOVERED */
+  linenState: string
+  /** 可住灯（仅 RECOVERED 亮，与回收未齐互斥） */
+  availableLight: boolean
+  /** 回收未齐灯 */
+  recoveryPendingLight: boolean
+  recoveryId?: number
+  recoveryNo?: string
+  setCount?: number | null
+  bagWeight?: number | null
+  witnessName?: string | null
+  status?: string
+  kgPerSetMin?: number
+  kgPerSetMax?: number
+}
+
+export interface LinenBlocked {
+  reason?: string
+  roomId?: number
+  roomCode?: string
+  roomName?: string
+  departedShipId?: number
+  departedShipCode?: string
+  departedShipName?: string
+  recoveryId?: number
+  recoveryNo?: string
+  existingRecoveryNo?: string
+  existingRecoveryId?: number
+  submittedSetCount?: number | null
+  submittedBagWeight?: number | null
+  submittedWitnessName?: string | null
+  kgPerSetMin?: number
+  kgPerSetMax?: number
+  inferredSetCountMin?: number
+  inferredSetCountMax?: number
+  message?: string
+}
+
 export const applianceApi = {
   list: () => request.get('/appliance'),
   get: (id: number) => request.get(`/appliance/${id}`),
@@ -387,4 +467,22 @@ export const patrolApi = {
   listOfficers: () => request.get('/patrol/officers'),
   createOfficer: (data: PatrolOfficer) => request.post('/patrol/officer', data),
   updateOfficer: (id: number, data: PatrolOfficer) => request.put(`/patrol/officer/${id}`, data)
+}
+
+export const linenApi = {
+  save: (data: {
+    id?: number
+    roomId?: number
+    setCount?: number | null
+    bagWeight?: number | null
+    witnessName?: string | null
+    operator?: string
+    remark?: string
+  }) => request.post('/linen/records', data),
+  voidRecord: (id: number, operator?: string, reason?: string) =>
+    request.put(`/linen/records/${id}/void`, null, { params: { operator, reason } }),
+  records: (roomId?: number, shipId?: number) =>
+    request.get('/linen/records', { params: { roomId, shipId } }),
+  roomStates: () => request.get('/linen/rooms'),
+  roomState: (roomId: number) => request.get(`/linen/rooms/${roomId}`)
 }

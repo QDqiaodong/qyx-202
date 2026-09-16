@@ -6,7 +6,7 @@ import {
 } from 'element-plus'
 import {
   keyApi, roomApi, shipApi,
-  type LoungeKey, type LoungeRoom, type Ship, type KeyOccupancy, type KeyCheckoutRecord, type KeyBlocked
+  type LoungeKey, type LoungeRoom, type Ship, type KeyOccupancy, type KeyCheckoutRecord, type KeyBlocked, type LinenBlocked
 } from '@/api'
 
 const keys = ref<LoungeKey[]>([])
@@ -132,7 +132,36 @@ const openCheckoutDialog = () => {
 
 const showBlockedError = (error: any, fallback: string) => {
   const blocked: KeyBlocked | undefined = error.response?.data?.data
+  const linenBlocked: LinenBlocked | undefined =
+    blocked && (blocked as unknown as LinenBlocked).reason === 'LINEN_PENDING'
+      ? (blocked as unknown as LinenBlocked)
+      : undefined
   const message = error.response?.data?.message || fallback
+
+  if (linenBlocked) {
+    const lines = [
+      `卡住的房间：${linenBlocked.roomCode}（${linenBlocked.roomName || '-'}）`
+    ]
+    if (linenBlocked.departedShipCode) {
+      lines.push(`上一班船：${linenBlocked.departedShipCode}（${linenBlocked.departedShipName || '-'}）`)
+    }
+    if (linenBlocked.existingRecoveryNo) {
+      lines.push(`未齐回收单：${linenBlocked.existingRecoveryNo}（套数/封袋/见证人没齐）`)
+    } else {
+      lines.push('回收单：还没开')
+    }
+    if (linenBlocked.kgPerSetMin !== undefined && linenBlocked.kgPerSetMax !== undefined) {
+      lines.push(`每套约定：${Number(linenBlocked.kgPerSetMin).toFixed(2)}~${Number(linenBlocked.kgPerSetMax).toFixed(2)}kg/套`)
+    }
+    lines.push('请先到「布草回收」把脏床品套数、封袋公斤数、见证人登记齐，再领取钥匙占用。')
+    ElMessageBox.alert(`${message}\n\n${lines.join('\n')}`, '领取整单退回·回收未齐', {
+      type: 'error',
+      confirmButtonText: '知道了',
+      customClass: 'key-blocked-message'
+    })
+    return
+  }
+
   if (blocked && blocked.keyCode) {
     const lines = [
       `卡住的钥匙：${blocked.keyCode}（${blocked.keyName || '-'}）`,

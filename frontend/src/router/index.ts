@@ -38,6 +38,11 @@ const router = createRouter({
       component: () => import('../views/PatrolView.vue')
     },
     {
+      path: '/linen',
+      name: 'linen',
+      component: () => import('../views/LinenView.vue')
+    },
+    {
       path: '/statistics',
       name: 'statistics',
       component: () => import('../views/StatisticsView.vue')

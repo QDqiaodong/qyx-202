@@ -50,6 +50,8 @@ class KeyCheckoutServiceTest {
     private ShipRepository shipRepository;
     @Mock
     private ShiftOperationLockService shiftOperationLockService;
+    @Mock
+    private LinenRecoveryService linenRecoveryService;
 
     private KeyCheckoutService service;
 
@@ -62,7 +64,8 @@ class KeyCheckoutServiceTest {
                 loungeRoomRepository,
                 roomShipRelationRepository,
                 shipRepository,
-                shiftOperationLockService
+                shiftOperationLockService,
+                linenRecoveryService
         );
     }
 

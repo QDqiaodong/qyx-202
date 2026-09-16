@@ -43,6 +43,7 @@ public class KeyCheckoutService {
     private final RoomShipRelationRepository roomShipRelationRepository;
     private final ShipRepository shipRepository;
     private final ShiftOperationLockService shiftOperationLockService;
+    private final LinenRecoveryService linenRecoveryService;
 
     public KeyCheckoutService(LoungeKeyRepository loungeKeyRepository,
                               KeyOccupancyRepository keyOccupancyRepository,
@@ -50,7 +51,8 @@ public class KeyCheckoutService {
                               LoungeRoomRepository loungeRoomRepository,
                               RoomShipRelationRepository roomShipRelationRepository,
                               ShipRepository shipRepository,
-                              ShiftOperationLockService shiftOperationLockService) {
+                              ShiftOperationLockService shiftOperationLockService,
+                              LinenRecoveryService linenRecoveryService) {
         this.loungeKeyRepository = loungeKeyRepository;
         this.keyOccupancyRepository = keyOccupancyRepository;
         this.keyCheckoutRecordRepository = keyCheckoutRecordRepository;
@@ -58,6 +60,7 @@ public class KeyCheckoutService {
         this.roomShipRelationRepository = roomShipRelationRepository;
         this.shipRepository = shipRepository;
         this.shiftOperationLockService = shiftOperationLockService;
+        this.linenRecoveryService = linenRecoveryService;
     }
 
     @Transactional
@@ -102,6 +105,10 @@ public class KeyCheckoutService {
                             + requestedShip.getShipCode() + "（" + requestedShip.getShipName() + "），" + currentText,
                     buildBlockedDTO(key, room, requestedShip, currentShip, null));
         }
+
+        // 换船后上一班留下的脏床品必须已回收齐（三栏齐、公斤对得上、可住灯亮），
+        // 否则别的船的人进门占用一律整单退回，避免踩着上一班的被套入住
+        linenRecoveryService.assertAvailableForOccupancy(room, relations);
 
         String batch = newBatch();
         LocalDateTime now = LocalDateTime.now();
