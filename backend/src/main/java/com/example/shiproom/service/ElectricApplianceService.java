@@ -15,6 +15,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -42,6 +43,9 @@ public class ElectricApplianceService {
     @Autowired
     private ShiftOperationLockService shiftOperationLockService;
 
+    @Autowired
+    private RoomPowerService roomPowerService;
+
     @Transactional
     public ElectricApplianceDTO create(ElectricApplianceDTO dto) {
         shiftOperationLockService.lock();
@@ -49,10 +53,16 @@ public class ElectricApplianceService {
         if (electricApplianceRepository.existsByDeviceCode(dto.getDeviceCode())) {
             throw new RuntimeException("设备编号已存在");
         }
+        BigDecimal power = normalizePower(dto.getPower());
+        // 新建电器直接挂进房间：挂上后合计会压过承载（或该房已超限）则整单不落账
+        if (dto.getRoomId() != null) {
+            roomPowerService.assertCanAttach(dto.getRoomId(), power,
+                    null, dto.getDeviceCode(), dto.getDeviceName());
+        }
         ElectricAppliance appliance = new ElectricAppliance();
         appliance.setDeviceCode(dto.getDeviceCode());
         appliance.setDeviceName(dto.getDeviceName());
-        appliance.setPower(dto.getPower());
+        appliance.setPower(power);
         appliance.setApplianceType(dto.getApplianceType());
         appliance.setStatus(dto.getStatus() != null ? dto.getStatus() : "ACTIVE");
         appliance.setRoomId(dto.getRoomId());
@@ -81,7 +91,8 @@ public class ElectricApplianceService {
 
         appliance.setDeviceCode(dto.getDeviceCode());
         appliance.setDeviceName(dto.getDeviceName());
-        appliance.setPower(dto.getPower());
+        // 改功率不做挂入承载校验：超限房间可以靠把功率调低把合计降回来，改完房间页三个数当场跟着变
+        appliance.setPower(normalizePower(dto.getPower()));
         appliance.setApplianceType(dto.getApplianceType());
         appliance.setStatus(dto.getStatus());
         appliance.setRoomId(dto.getRoomId());
@@ -129,6 +140,16 @@ public class ElectricApplianceService {
         return electricApplianceRepository.findByShipId(shipId).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    private BigDecimal normalizePower(BigDecimal power) {
+        if (power == null) {
+            return BigDecimal.ZERO.setScale(2, java.math.RoundingMode.HALF_UP);
+        }
+        if (power.signum() < 0) {
+            throw new RuntimeException("电器功率不能为负数");
+        }
+        return power.setScale(2, java.math.RoundingMode.HALF_UP);
     }
 
     private void validateRoomShipBinding(Long roomId, Long shipId) {

@@ -27,11 +27,34 @@ export interface LoungeRoom {
   roomName: string
   floor?: string
   capacity?: number
+  /** 用电承载（千瓦），可在房间档案单独调整 */
+  powerCapacity?: number
+  /** 已挂电器功率合计（千瓦），服务端实时汇总 */
+  powerUsed?: number
+  /** 还能接多少（千瓦），为负即超限 */
+  powerRemaining?: number
+  /** 已挂合计是否压过承载 */
+  overCapacity?: boolean
   status?: string
   shipId?: number
   shipCode?: string
   shipName?: string
   changeBatch?: string
+}
+
+export interface RoomOverCapacity {
+  roomId: number
+  roomCode: string
+  roomName?: string
+  powerCapacity: number
+  powerUsed: number
+  powerRemaining: number
+  applianceId?: number
+  applianceCode?: string
+  applianceName?: string
+  appliancePower: number
+  projectedTotal: number
+  message?: string
 }
 
 export interface Ship {

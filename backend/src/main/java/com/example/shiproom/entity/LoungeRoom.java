@@ -3,6 +3,7 @@ package com.example.shiproom.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -25,6 +26,10 @@ public class LoungeRoom {
 
     @Column(name = "capacity")
     private Integer capacity;
+
+    /** 用电承载（千瓦），每间房单独设定；老数据由启动回填给默认值 */
+    @Column(name = "power_capacity", precision = 10, scale = 2)
+    private BigDecimal powerCapacity;
 
     @Column(name = "status", length = 20)
     private String status;

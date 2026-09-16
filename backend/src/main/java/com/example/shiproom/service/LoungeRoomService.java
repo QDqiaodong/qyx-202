@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,6 +30,9 @@ public class LoungeRoomService {
     @Autowired
     private ShiftOperationLockService shiftOperationLockService;
 
+    @Autowired
+    private RoomPowerService roomPowerService;
+
     @Transactional
     public LoungeRoomDTO create(LoungeRoomDTO dto) {
         shiftOperationLockService.lock();
@@ -40,6 +44,7 @@ public class LoungeRoomService {
         room.setRoomName(dto.getRoomName());
         room.setFloor(dto.getFloor());
         room.setCapacity(dto.getCapacity());
+        room.setPowerCapacity(normalizeCapacity(dto.getPowerCapacity()));
         room.setStatus(dto.getStatus() != null ? dto.getStatus() : "ACTIVE");
 
         return convertToDTO(loungeRoomRepository.save(room));
@@ -60,6 +65,8 @@ public class LoungeRoomService {
         room.setRoomName(dto.getRoomName());
         room.setFloor(dto.getFloor());
         room.setCapacity(dto.getCapacity());
+        // 承载允许单独调低（调低后可能立刻显示超限，那是如实呈现，不锁档案）
+        room.setPowerCapacity(normalizeCapacity(dto.getPowerCapacity()));
         room.setStatus(dto.getStatus());
 
         return convertToDTO(loungeRoomRepository.save(room));
@@ -92,6 +99,16 @@ public class LoungeRoomService {
         return convertToDTO(room);
     }
 
+    private BigDecimal normalizeCapacity(BigDecimal capacity) {
+        if (capacity == null) {
+            return RoomPowerService.DEFAULT_POWER_CAPACITY;
+        }
+        if (capacity.signum() < 0) {
+            throw new RuntimeException("用电承载不能为负数");
+        }
+        return capacity.setScale(2, java.math.RoundingMode.HALF_UP);
+    }
+
     private LoungeRoomDTO convertToDTO(LoungeRoom room) {
         LoungeRoomDTO dto = new LoungeRoomDTO();
         dto.setId(room.getId());
@@ -100,6 +117,9 @@ public class LoungeRoomService {
         dto.setFloor(room.getFloor());
         dto.setCapacity(room.getCapacity());
         dto.setStatus(room.getStatus());
+
+        // 承载、已挂合计、剩余、是否超限：合计按该房间全部电器实时 SUM
+        roomPowerService.fillPowerSummary(room, dto);
 
         roomShipRelationRepository.findByRoomId(room.getId())
                 .stream()

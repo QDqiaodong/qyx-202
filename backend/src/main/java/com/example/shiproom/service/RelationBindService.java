@@ -43,19 +43,22 @@ public class RelationBindService {
     private final ShipRepository shipRepository;
     private final RelationChangeLogRepository relationChangeLogRepository;
     private final ShiftOperationLockService shiftOperationLockService;
+    private final RoomPowerService roomPowerService;
 
     public RelationBindService(RoomShipRelationRepository roomShipRelationRepository,
                                ElectricApplianceRepository electricApplianceRepository,
                                LoungeRoomRepository loungeRoomRepository,
                                ShipRepository shipRepository,
                                RelationChangeLogRepository relationChangeLogRepository,
-                               ShiftOperationLockService shiftOperationLockService) {
+                               ShiftOperationLockService shiftOperationLockService,
+                               RoomPowerService roomPowerService) {
         this.roomShipRelationRepository = roomShipRelationRepository;
         this.electricApplianceRepository = electricApplianceRepository;
         this.loungeRoomRepository = loungeRoomRepository;
         this.shipRepository = shipRepository;
         this.relationChangeLogRepository = relationChangeLogRepository;
         this.shiftOperationLockService = shiftOperationLockService;
+        this.roomPowerService = roomPowerService;
     }
 
     @Transactional
@@ -87,6 +90,13 @@ public class RelationBindService {
         if (isStopped(appliance)) {
             ShiftBlockedApplianceDTO blocked = convertToBlockedDTO(appliance, room, ship);
             throw new ShiftBlockedException(buildBlockedMessage(List.of(blocked)), List.of(blocked));
+        }
+
+        // 只有「把没挂房的电器挂进这间房」才算新挂入；已在该房的重绑在前面已被房间迁移检查挡住，
+        // 所以到这里 oldRoomId 若有值必等于本房，不需要也不允许按挂入再校验承载。
+        if (appliance.getRoomId() == null) {
+            roomPowerService.assertCanAttach(room.getId(), appliance.getPower(),
+                    appliance.getId(), appliance.getDeviceCode(), appliance.getDeviceName());
         }
 
         Long oldRoomId = appliance.getRoomId();

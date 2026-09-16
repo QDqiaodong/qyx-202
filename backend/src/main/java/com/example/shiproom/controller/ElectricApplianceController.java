@@ -2,8 +2,10 @@ package com.example.shiproom.controller;
 
 import com.example.shiproom.dto.ElectricApplianceDTO;
 import com.example.shiproom.dto.ResponseDTO;
+import com.example.shiproom.exception.RoomOverCapacityException;
 import com.example.shiproom.service.ElectricApplianceService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,11 +18,14 @@ public class ElectricApplianceController {
     private ElectricApplianceService electricApplianceService;
 
     @PostMapping
-    public ResponseDTO<ElectricApplianceDTO> create(@RequestBody ElectricApplianceDTO dto) {
+    public ResponseEntity<ResponseDTO<?>> create(@RequestBody ElectricApplianceDTO dto) {
         try {
-            return ResponseDTO.success(electricApplianceService.create(dto));
+            return ResponseEntity.ok(ResponseDTO.success(electricApplianceService.create(dto)));
+        } catch (RoomOverCapacityException e) {
+            return ResponseEntity.status(409)
+                    .body(ResponseDTO.error(409, e.getMessage(), e.getDetail()));
         } catch (Exception e) {
-            return ResponseDTO.error(e.getMessage());
+            return ResponseEntity.badRequest().body(ResponseDTO.error(400, e.getMessage()));
         }
     }
 

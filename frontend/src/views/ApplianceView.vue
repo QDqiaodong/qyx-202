@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { ElTable, ElTableColumn, ElButton, ElDialog, ElForm, ElFormItem, ElInput, ElSelect, ElMessage, ElInputNumber } from 'element-plus'
+import { computed, ref, onMounted } from 'vue'
+import { ElTable, ElTableColumn, ElButton, ElDialog, ElForm, ElFormItem, ElInput, ElSelect, ElMessage, ElInputNumber, ElMessageBox } from 'element-plus'
 import ElSelectOption from 'element-plus'
-import { applianceApi, roomApi, shipApi, type ElectricAppliance, type LoungeRoom, type Ship } from '@/api'
+import { applianceApi, roomApi, shipApi, type ElectricAppliance, type LoungeRoom, type Ship, type RoomOverCapacity } from '@/api'
 
 const appliances = ref<ElectricAppliance[]>([])
 const rooms = ref<LoungeRoom[]>([])
@@ -25,6 +25,26 @@ const statusOptions = [
   { label: '停用', value: 'INACTIVE' }
 ]
 
+const selectedRoom = computed<LoungeRoom | undefined>(() =>
+  rooms.value.find(room => room.id === form.value.roomId)
+)
+
+const roomHintClass = computed(() => {
+  const room = selectedRoom.value
+  if (!room) {
+    return 'room-hint'
+  }
+  const used = Number(room.powerUsed || 0)
+  const capacity = Number(room.powerCapacity ?? 5)
+  if (used > capacity) {
+    return 'room-hint room-hint-over'
+  }
+  if (used + Number(powerInput.value || 0) > capacity) {
+    return 'room-hint room-hint-warn'
+  }
+  return 'room-hint room-hint-ok'
+})
+
 const loadData = async () => {
   try {
     const [applianceRes, roomRes, shipRes] = await Promise.all([
@@ -38,6 +58,29 @@ const loadData = async () => {
   } catch (error) {
     ElMessage.error('加载数据失败')
   }
+}
+
+const showOverCapacity = (error: any) => {
+  const detail: RoomOverCapacity | undefined = error.response?.data?.data
+  if (!detail) {
+    ElMessage.error(error.response?.data?.message || '操作失败')
+    return
+  }
+  const n = (value: number) => Number(value).toFixed(2)
+  const lines = [
+    `房间：${detail.roomCode}（${detail.roomName || ''}）`,
+    `承载：${n(detail.powerCapacity)} kW`,
+    `当前已挂：${n(detail.powerUsed)} kW`,
+    `这一台（${detail.applianceName || ''} ${detail.applianceCode || ''}）：${n(detail.appliancePower)} kW`,
+    `挂上后合计：${n(detail.projectedTotal)} kW`,
+    '',
+    '本次挂入没有落账。请先拆下电器或调低功率，把合计降回承载以内。'
+  ]
+  ElMessageBox.alert(lines.join('\n'), '挂入被退回：会压过房间承载', {
+    type: 'error',
+    confirmButtonText: '知道了',
+    customClass: 'room-over-capacity-message'
+  })
 }
 
 const openDialog = (edit = false, data?: ElectricAppliance) => {
@@ -75,17 +118,21 @@ const save = async () => {
     dialogVisible.value = false
     loadData()
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.message || '操作失败')
+    if (error.response?.status === 409 && error.response?.data?.data?.roomId) {
+      showOverCapacity(error)
+    } else {
+      ElMessage.error(error.response?.data?.message || '操作失败')
+    }
   }
 }
 
 const deleteItem = async (id: number) => {
   try {
     await applianceApi.delete(id)
-    ElMessage.success('删除成功')
+    ElMessage.success('拆除成功')
     loadData()
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.message || '删除失败')
+    ElMessage.error(error.response?.data?.message || '拆除失败')
   }
 }
 
@@ -115,7 +162,7 @@ onMounted(loadData)
       <ElTableColumn label="操作">
         <template #default="{ row }">
           <ElButton size="small" @click="openDialog(true, row as ElectricAppliance)">编辑</ElButton>
-          <ElButton size="small" type="danger" @click="deleteItem((row as ElectricAppliance).id!)">删除</ElButton>
+          <ElButton size="small" type="danger" @click="deleteItem((row as ElectricAppliance).id!)">拆走</ElButton>
         </template>
       </ElTableColumn>
     </ElTable>
@@ -143,8 +190,26 @@ onMounted(loadData)
         </ElFormItem>
         <ElFormItem label="所属休息室">
           <ElSelect v-model="form.roomId" :disabled="isEdit" placeholder="绑定后请通过换班调整">
-            <ElSelectOption v-for="room in rooms" :key="room.id" :label="room.roomName" :value="room.id" />
+            <ElSelectOption
+              v-for="room in rooms"
+              :key="room.id"
+              :label="`${room.roomName}（已挂 ${Number(room.powerUsed || 0).toFixed(2)}/${Number(room.powerCapacity ?? 5).toFixed(2)} kW）`"
+              :value="room.id"
+            />
           </ElSelect>
+          <div v-if="!isEdit && selectedRoom" :class="roomHintClass">
+            <template v-if="Number(selectedRoom.powerUsed || 0) > Number(selectedRoom.powerCapacity ?? 5)">
+              该房已挂 {{ Number(selectedRoom.powerUsed).toFixed(2) }} kW，已超承载
+              {{ Number(selectedRoom.powerCapacity ?? 5).toFixed(2) }} kW，先降下合计才能挂这台
+            </template>
+            <template v-else>
+              承载 {{ Number(selectedRoom.powerCapacity ?? 5).toFixed(2) }} kW，已挂
+              {{ Number(selectedRoom.powerUsed || 0).toFixed(2) }} kW，剩余
+              {{ Number(selectedRoom.powerRemaining ?? 0).toFixed(2) }} kW；本台
+              {{ Number(powerInput || 0).toFixed(2) }} kW，挂上后合计
+              {{ (Number(selectedRoom.powerUsed || 0) + Number(powerInput || 0)).toFixed(2) }} kW
+            </template>
+          </div>
         </ElFormItem>
         <ElFormItem label="绑定船舶">
           <ElSelect v-model="form.shipId" :disabled="isEdit" placeholder="绑定后请通过换班调整">
@@ -166,5 +231,27 @@ onMounted(loadData)
 }
 .text-red {
   color: #f56c6c;
+}
+.room-hint {
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 4px;
+}
+.room-hint-ok {
+  color: #67c23a;
+}
+.room-hint-warn {
+  color: #e6a23c;
+}
+.room-hint-over {
+  color: #f56c6c;
+  font-weight: bold;
+}
+</style>
+
+<style>
+.room-over-capacity-message .el-message-box__message {
+  white-space: pre-line;
+  line-height: 1.7;
 }
 </style>

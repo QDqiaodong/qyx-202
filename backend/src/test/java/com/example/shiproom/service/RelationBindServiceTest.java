@@ -42,6 +42,8 @@ class RelationBindServiceTest {
     private RelationChangeLogRepository relationChangeLogRepository;
     @Mock
     private ShiftOperationLockService shiftOperationLockService;
+    @Mock
+    private RoomPowerService roomPowerService;
 
     private RelationBindService service;
 
@@ -53,7 +55,8 @@ class RelationBindServiceTest {
                 loungeRoomRepository,
                 shipRepository,
                 relationChangeLogRepository,
-                shiftOperationLockService
+                shiftOperationLockService,
+                roomPowerService
         );
     }
 

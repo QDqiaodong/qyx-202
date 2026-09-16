@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { ElButton, ElDialog, ElForm, ElFormItem, ElSelect, ElInput, ElMessage, ElCard, ElMessageBox } from 'element-plus'
 import ElSelectOption from 'element-plus'
-import { applianceApi, roomApi, shipApi, relationApi, type ElectricAppliance, type LoungeRoom, type Ship, type ShiftBlockedAppliance, type ShiftResult } from '@/api'
+import { applianceApi, roomApi, shipApi, relationApi, type ElectricAppliance, type LoungeRoom, type Ship, type ShiftBlockedAppliance, type ShiftResult, type RoomOverCapacity } from '@/api'
 
 const appliances = ref<ElectricAppliance[]>([])
 const rooms = ref<LoungeRoom[]>([])
@@ -34,6 +34,11 @@ const shipChangeForm = ref({
 })
 
 const showBlockedError = (error: any, fallbackMessage: string) => {
+  if (error.response?.status === 409 && error.response?.data?.data?.roomId
+          && !Array.isArray(error.response.data.data)) {
+    showOverCapacity(error)
+    return
+  }
   const blocked: ShiftBlockedAppliance[] = error.response?.data?.data || []
   const message = error.response?.data?.message || fallbackMessage
   if (blocked.length > 0) {
@@ -50,6 +55,25 @@ const showBlockedError = (error: any, fallbackMessage: string) => {
   } else {
     ElMessage.error(message)
   }
+}
+
+const showOverCapacity = (error: any) => {
+  const detail: RoomOverCapacity = error.response.data.data
+  const n = (value: number) => Number(value).toFixed(2)
+  const lines = [
+    `房间：${detail.roomCode}（${detail.roomName || ''}）`,
+    `承载：${n(detail.powerCapacity)} kW`,
+    `当前已挂：${n(detail.powerUsed)} kW`,
+    `这一台（${detail.applianceName || ''} ${detail.applianceCode || ''}）：${n(detail.appliancePower)} kW`,
+    `挂上后合计：${n(detail.projectedTotal)} kW`,
+    '',
+    '本次挂入没有落账。该房已超承载时不能再挂新电器，也不接受从别的房间改挂进来；请先拆下电器或调低功率。'
+  ]
+  ElMessageBox.alert(lines.join('\n'), '挂入被退回：会压过房间承载', {
+    type: 'error',
+    confirmButtonText: '知道了',
+    customClass: 'room-over-capacity-message'
+  })
 }
 
 const showShiftSuccess = (result: ShiftResult, label: string) => {
@@ -248,5 +272,9 @@ onMounted(loadData)
 .shift-blocked-message .el-message-box__message {
   white-space: pre-line;
   line-height: 1.6;
+}
+.room-over-capacity-message .el-message-box__message {
+  white-space: pre-line;
+  line-height: 1.7;
 }
 </style>

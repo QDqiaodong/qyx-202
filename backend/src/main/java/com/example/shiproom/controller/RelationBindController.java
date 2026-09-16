@@ -5,6 +5,7 @@ import com.example.shiproom.dto.LoungeRoomDTO;
 import com.example.shiproom.dto.RelationBindDTO;
 import com.example.shiproom.dto.RelationChangeLogDTO;
 import com.example.shiproom.dto.ResponseDTO;
+import com.example.shiproom.exception.RoomOverCapacityException;
 import com.example.shiproom.exception.ShiftBlockedException;
 import com.example.shiproom.service.RelationBindService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,8 @@ public class RelationBindController {
         try {
             relationBindService.bindDevice(dto);
             return ResponseEntity.ok(ResponseDTO.success(null));
+        } catch (RoomOverCapacityException e) {
+            return ResponseEntity.status(409).<ResponseDTO<?>>body(ResponseDTO.error(409, e.getMessage(), e.getDetail()));
         } catch (ShiftBlockedException e) {
             return ResponseEntity.status(409).<ResponseDTO<?>>body(ResponseDTO.error(409, e.getMessage(), e.getBlockedAppliances()));
         } catch (RuntimeException e) {

@@ -32,6 +32,13 @@ public interface ElectricApplianceRepository extends JpaRepository<ElectricAppli
     @Query("select appliance from ElectricAppliance appliance where appliance.roomId = :roomId")
     List<ElectricAppliance> findByRoomIdForUpdate(@Param("roomId") Long roomId);
 
+    /**
+     * 已挂在某间房的全部电器功率合计；房间一台电器都没有时返回 null（按 0 处理）。
+     * 合计只认 electric_appliance 表里 room_id 指向该房的行，保证跟逐台加总对得上。
+     */
+    @Query("select coalesce(sum(appliance.power), 0) from ElectricAppliance appliance where appliance.roomId = :roomId")
+    java.math.BigDecimal sumPowerByRoomId(@Param("roomId") Long roomId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select appliance from ElectricAppliance appliance where appliance.shipId = :shipId")
     List<ElectricAppliance> findByShipIdForUpdate(@Param("shipId") Long shipId);

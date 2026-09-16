@@ -86,7 +86,8 @@ docker-compose up -d
 - id, device_code, device_name, power, appliance_type, status, room_id, ship_id, create_time, update_time
 
 ### lounge_room (休息室表)
-- id, room_code, room_name, floor, capacity, status, create_time, update_time
+- id, room_code, room_name, floor, capacity, power_capacity, status, create_time, update_time
+- `power_capacity`：每间房的用电承载（千瓦），可在房间档案单独调整；老房间启动时回填默认 5.00 kW
 
 ### ship (船舶表)
 - id, ship_code, ship_name, ship_type, dock_code, status, create_time, update_time
